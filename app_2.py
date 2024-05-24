@@ -138,8 +138,8 @@ def main():
 
             #! Alpha Events
 
-            positive_alpha_events = f'{round(((df['alpha'] >= 0).sum()/len(df))*100,2)} %'
-            negative_alpha_events = f'{round(((df['alpha'] < 0).sum()/len(df))*100,2)} %'
+            positive_alpha_events = f"{round(((df['alpha'] >= 0).sum() / len(df)) * 100, 2)} %"
+            negative_alpha_events = f"{round(((df['alpha'] < 0).sum() / len(df)) * 100, 2)} %"
 
             # print(f'% positive_alpha_events : {positive_alpha_events}\n% negative_alpha_events : {negative_alpha_events}')
 
