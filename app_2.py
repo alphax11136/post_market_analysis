@@ -128,79 +128,85 @@ def main():
 
             df['alpha'] = df.apply(calculate_alpha, axis=1)
 
-            #! Alpha %
+            #  Convert Timestamp to datetime
+            df['Timestamp'] = pd.to_datetime(df['Timestamp'], format='%Y-%b-%d %H:%M:%S')
 
-            positive_alpha = round(df[df['alpha'] > 0]['alpha'].sum(),2)
-            negative_alpha = round(df[df['alpha'] < 0]['alpha'].sum(),2)
-            net_alpha = round(positive_alpha + negative_alpha,2)
+            # Extract date and time
+            df['date'] = df['Timestamp'].dt.date
+            df['time'] = df['Timestamp'].dt.time
 
-            # print(f'% positive_alpha : {positive_alpha}\n% negative_alpha : {negative_alpha}\n% net_alpha : {net_alpha}')
+            if len(df['date'].unique()) == 1:
+                print('File date is correct')
 
-            #! Alpha Events
+                #! Alpha %
 
-            positive_alpha_events = f"{round(((df['alpha'] >= 0).sum() / len(df)) * 100, 2)} %"
-            negative_alpha_events = f"{round(((df['alpha'] < 0).sum() / len(df)) * 100, 2)} %"
+                positive_alpha = round(df[df['alpha'] > 0]['alpha'].sum(),2)
+                negative_alpha = round(df[df['alpha'] < 0]['alpha'].sum(),2)
+                net_alpha = round(positive_alpha + negative_alpha,2)
 
-            # print(f'% positive_alpha_events : {positive_alpha_events}\n% negative_alpha_events : {negative_alpha_events}')
+                # print(f'% positive_alpha : {positive_alpha}\n% negative_alpha : {negative_alpha}\n% net_alpha : {net_alpha}')
 
-            #! Top 5 profitable/Lossers alphas
+                #! Alpha Events
 
-            # grouped_df = df.groupby('Portfolio', as_index=False)['alpha'].sum()
+                positive_alpha_events = f"{round(((df['alpha'] >= 0).sum() / len(df)) * 100, 2)} %"
+                negative_alpha_events = f"{round(((df['alpha'] < 0).sum() / len(df)) * 100, 2)} %"
 
-            df['price'] = df['TRDPARITY'] * df['QTY']
 
-            result = df.groupby('Portfolio').agg(
-                open_qty=pd.NamedAgg(column='QTY', aggfunc=lambda x: x[df.loc[x.index, 'OpnCls'] == 1].sum()),
-                close_qty=pd.NamedAgg(column='QTY', aggfunc=lambda x: x[df.loc[x.index, 'OpnCls'] == 2].sum()),
-                buy_margin=pd.NamedAgg(column='price', aggfunc=lambda x: x[df.loc[x.index, 'OpnCls'] == 1].sum()),
-                sell_margin=pd.NamedAgg(column='price', aggfunc=lambda x: x[df.loc[x.index, 'OpnCls'] == 2].sum())
-            ).reset_index()
+                # print(f'% positive_alpha_events : {positive_alpha_events}\n% negative_alpha_events : {negative_alpha_events}')
 
-            # Calculate buy_avg and sell_avg
-            result['buy_avg'] = result.apply(lambda row: row['buy_margin'] / row['open_qty'] if row['open_qty'] != 0 else 0, axis=1)
-            result['sell_avg'] = result.apply(lambda row: row['sell_margin'] / row['close_qty'] if row['close_qty'] != 0 else 0, axis=1)
+                #! Top 5 profitable/Lossers alphas
 
-            # Calculate gross_profit
-            result['lot_size'] = result['Portfolio'].apply(determine_lot_size)
-            result['gross_profit'] = ((result['open_qty'] * result['buy_avg']) + (result['close_qty'] * result['sell_avg'])) * result['lot_size']
+                # grouped_df = df.groupby('Portfolio', as_index=False)['alpha'].sum()
 
-            # Display the final result
-            columns_to_remove = ['buy_margin','sell_margin','lot_size']
-            result.drop(columns=columns_to_remove, inplace=True)
+                df['price'] = df['TRDPARITY'] * df['QTY']
 
-            top_5_df = result.nlargest(5, 'gross_profit')
+                result = df.groupby('Portfolio').agg(
+                    open_qty=pd.NamedAgg(column='QTY', aggfunc=lambda x: x[df.loc[x.index, 'OpnCls'] == 1].sum()),
+                    close_qty=pd.NamedAgg(column='QTY', aggfunc=lambda x: x[df.loc[x.index, 'OpnCls'] == 2].sum()),
+                    buy_margin=pd.NamedAgg(column='price', aggfunc=lambda x: x[df.loc[x.index, 'OpnCls'] == 1].sum()),
+                    sell_margin=pd.NamedAgg(column='price', aggfunc=lambda x: x[df.loc[x.index, 'OpnCls'] == 2].sum())
+                ).reset_index()
 
-            #! Final dataframe 
+                # Calculate buy_avg and sell_avg
+                result['buy_avg'] = result.apply(lambda row: row['buy_margin'] / row['open_qty'] if row['open_qty'] != 0 else 0, axis=1)
+                result['sell_avg'] = result.apply(lambda row: row['sell_margin'] / row['close_qty'] if row['close_qty'] != 0 else 0, axis=1)
 
-            top_alpha_portfolio = top_5_df['Portfolio'].to_list()
-            top_alpha_profit = top_5_df['gross_profit'].to_list()
+                # Calculate gross_profit
+                result['lot_size'] = result['Portfolio'].apply(determine_lot_size)
+                result['gross_profit'] = ((result['open_qty'] * result['buy_avg']) + (result['close_qty'] * result['sell_avg'])) * result['lot_size']
 
-            data = {
-                    'dealer_id' : dealer_id,
+                # Display the final result
+                columns_to_remove = ['buy_margin','sell_margin','lot_size']
+                result.drop(columns=columns_to_remove, inplace=True)
+                
+                top_5_df = result.nlargest(5, 'gross_profit')
 
-                    'positive_alpha_events' : [positive_alpha_events],
-                    'negative_alpha_events' : [negative_alpha_events],
-                    
-                    'positive_alpha' : [positive_alpha],
-                    'negative_alpha' : [negative_alpha],
-                    'net_alpha' : [net_alpha],
+                #! Final dataframe 
 
-                    't1' : [top_alpha_portfolio[0]],
-                    't2' : [top_alpha_portfolio[1]],
-                    't3' : [top_alpha_portfolio[2]],
-                    't4' : [top_alpha_portfolio[3]],
-                    't5' : [top_alpha_portfolio[4]],
+                top_alpha_portfolio = top_5_df['Portfolio'].to_list()
+                top_alpha_profit = top_5_df['gross_profit'].to_list()
 
-                    'tv1' : [top_alpha_profit[0]],
-                    'tv2' : [top_alpha_profit[1]],
-                    'tv3' : [top_alpha_profit[2]],
-                    'tv4' : [top_alpha_profit[3]],
-                    'tv5' : [top_alpha_profit[4]],  
-                }
+                for portfolio, profit in zip(top_alpha_portfolio, top_alpha_profit): 
+                    data = {
+                            'dealer_id' : dealer_id,
 
-            df_per_dealer = pd.DataFrame(data)
-            all_data.append(df_per_dealer)
+                            'positive_alpha_events' : [positive_alpha_events],
+                            'negative_alpha_events' : [negative_alpha_events],
+                            
+                            'positive_alpha' : [positive_alpha],
+                            'negative_alpha' : [negative_alpha],
+                            'net_alpha' : [net_alpha],
 
+                            'portfolio' : portfolio,
+                            'value' : profit
+                        }
+
+                    df_per_dealer = pd.DataFrame(data)
+                    all_data.append(df_per_dealer)
+
+            else:
+                st.write('File not correct as multiple dates data')
+                pass
 
         # Concatenate all dataframes into a single dataframe
         df_all_dealer = pd.concat(all_data, ignore_index=True)
