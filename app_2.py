@@ -169,12 +169,11 @@ def main():
             result.drop(columns=columns_to_remove, inplace=True)
 
             top_5_df = result.nlargest(5, 'gross_profit')
-            bottom_5_df = result.nsmallest(5, 'gross_profit')
 
             #! Final dataframe 
 
             top_alpha_portfolio = top_5_df['Portfolio'].to_list()
-            bottom_alpha_portfolio = bottom_5_df['Portfolio'].to_list()
+            top_alpha_profit = top_5_df['gross_profit'].to_list()
 
             data = {
                     'dealer_id' : dealer_id,
@@ -192,11 +191,11 @@ def main():
                     't4' : [top_alpha_portfolio[3]],
                     't5' : [top_alpha_portfolio[4]],
 
-                    'b1' : [bottom_alpha_portfolio[0]],
-                    'b2' : [bottom_alpha_portfolio[1]],
-                    'b3' : [bottom_alpha_portfolio[2]],
-                    'b4' : [bottom_alpha_portfolio[3]],
-                    'b5' : [bottom_alpha_portfolio[4]]   
+                    'tv1' : [top_alpha_profit[0]],
+                    'tv2' : [top_alpha_profit[1]],
+                    'tv3' : [top_alpha_profit[2]],
+                    'tv4' : [top_alpha_profit[3]],
+                    'tv5' : [top_alpha_profit[4]],  
                 }
 
             df_per_dealer = pd.DataFrame(data)
