@@ -92,6 +92,20 @@ def main():
                     # Append the fields to the data list
                     data.append(fields)
 
+            try:
+                fields_to_remove = {
+                                'BestFast', 'TryHit', 'GRPIDX','Pred', 'GRPM2M', 'L1NoTradeSN', 
+                                'L1TradedSN', 'TmL1Fired', 'TmL1Conf', 'TmL1Trade'
+                            }
+                
+                filtered_data = []
+                for sublist in data:
+                    filtered_sublist = [item for item in sublist if not any(field in item for field in fields_to_remove)]
+                    filtered_data.append(filtered_sublist)
+                data = filtered_data
+            except:
+                pass
+
             # Create a DataFrame from the data list
             df = pd.DataFrame(data, columns=[
                 'Timestamp', 'Description', 'TRDPARITY', 'QTY', 'ParityWas', 
